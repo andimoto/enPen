@@ -35,6 +35,15 @@ Also this enable some flexibility to play with GCode and PWM translate to the Pe
 - __Servo PWM to Pin PB0__
 
 
+### Laser Pinout
+
+Connector
+-------
+| VCC     -> 12V
+| GND |   ->  0V
+| PWM     ->  5V PWM 
+-------
+
 ## Software
 - Reading in PWM of Laserengraver
   - Sol1:
