@@ -1,7 +1,7 @@
 $fn=80;
 extra = 0.02;
 
-simRod = false;
+simRod = true;
 
 upperVariant = 2;
 lowerVariant = 1;
@@ -76,8 +76,8 @@ function getHeadDia() = (enableM4slide) ? (screwM4HeadDia) : (screwM3HeadDia);
 function getHeadZ() = (enableM4slide) ? (screwM4HeadZ) : (screwM3HeadZ);
 
 
-
-// toolheadAdapter();
+translate([-7,th_y/2-th_adapter_y1/2,-2.5]) 
+toolheadAdapter();
 module toolheadAdapter()
 {
     difference()
@@ -187,8 +187,8 @@ module penToolhead()
 }
 
 
-// translate([th_x+3,0,slideh_z+2])
-// penHolder();
+translate([th_x+3,0,slideh_z+2])
+penHolder();
 module penHolder()
 {
     difference()
@@ -318,9 +318,9 @@ module slideHolder(variant = 1, thick=5)
     }
 }
 
-
-
-// servoFootprint();
+translate([1,-3,1]) 
+color("lightblue")
+servoFootprint();
 module servoFootprint()
 {
     translate([0,0,slideh_z+servoCutPZ]) 

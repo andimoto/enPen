@@ -1,7 +1,7 @@
-# enPEN
+# enPEN - 
 Work in Progress!
 
-PEN Replacement for Laserengravers.
+Direct PEN Replacement for Laserengravers.
 
 This project brings 3d printable parts and Arduino Firmware
 for replacing the Laserengraver to a Pen-Plotter.
@@ -9,6 +9,9 @@ To add a `z`- Axis this project uses a servo and some easy to build
 linear rail mechanism.
 The MCU (in this case a Digispark ATtiny85), reads the 5V / 1ms PWM from the Laser-Control-Board and translates it into the servos PWM signal. Thus, when Laser is of, the Pen will be moved up. If Laser is on, the Pen will be moved down. This is a direct replacement.
 
+[Documentation](documentation/project.md)
+
+![Model](parts/enPen.png)
 
 # LICENSE
 
