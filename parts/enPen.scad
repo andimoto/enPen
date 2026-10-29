@@ -1,7 +1,7 @@
 $fn=80;
 extra = 0.02;
 
-simRod = true;
+simRod = false;
 
 upperVariant = 2;
 lowerVariant = 1;
@@ -17,7 +17,7 @@ slideh_xMov =1;
 
 enableInserts = false;
 
-screwM3 = 3;
+screwM3 = 2.9;
 screwTolerance = 0.1;
 screwM3HeadDia = 6;
 screwM3HeadZ = 3;
@@ -27,7 +27,7 @@ ScrewInsertM3 = 4.5;
 function screwOrInsert() = 
     (enableInserts == true) ? ScrewInsertM3 : screwM3;
 
-th_adapter_z = 55;
+th_adapter_z = 100;
 th_adapter_y1 = 29.5;
 th_adapter_y2 = 25.5;
 th_adapter_holeMoveZ = 2.5;
@@ -49,6 +49,7 @@ servoCutPZ = 5;
 servoScrew = 2;
 servoScrewLen = 5;
 
+penHolderZ = 25;
 
 screwM3Slide = 3.2;
 slideBearingM3 = 4;
@@ -64,7 +65,7 @@ hexSlide = false;
 enableM3slide = false;
 enableM3slideBearing = false;
 enableM4slide = true;
-enableM4slideBearing = false;
+enableM4slideBearing = true;
 
 runAssert();
 
@@ -76,8 +77,8 @@ function getHeadDia() = (enableM4slide) ? (screwM4HeadDia) : (screwM3HeadDia);
 function getHeadZ() = (enableM4slide) ? (screwM4HeadZ) : (screwM3HeadZ);
 
 
-translate([-7,th_y/2-th_adapter_y1/2,-2.5]) 
-toolheadAdapter();
+// translate([-7,th_y/2-th_adapter_y1/2,-2.5]) 
+// toolheadAdapter();
 module toolheadAdapter()
 {
     difference()
@@ -112,12 +113,44 @@ module toolheadAdapter()
             // cylinder(h = th_x+extra*2, d = screwOrInsert());
         }
 
-        temp_adapterXMove = th_adapter_x1+th_adapter_x2 + th_adapter_x3;
-        translate([temp_adapterXMove-attiny_x+extra,th_adapter_y1/2-attiny_y/2,
-        th_adapter_z-attiny_z-2+extra]) 
-        cube([attiny_x,attiny_y,attiny_z+2]);
+        
     }
 }
+// pcbHolder();
+module pcbHolder()
+{
+    difference() 
+    {
+        hull()
+        {   translate([2,0,0]) 
+            cube([th_x-2,th_y,8]);
+            translate([2,2,8]) 
+            cube([th_x-2-2,th_y-4,2]);
+        }
+
+        translate([th_x/2,(th_y/3)/2,-extra]) 
+            cylinder(h = 10+extra*2, d = screwM3+0.2);
+        translate([th_x/2,5*(th_y/3)/2,-extra]) 
+            cylinder(h = 10+extra*2, d = screwM3+0.2);
+
+        translate([6,th_y/2-3/2-10,12]) 
+        rotate([0,45,0]) 
+        cube([20,3,1.5]);
+        translate([6,th_y/2-3/2+10,12]) 
+        rotate([0,45,0]) 
+        cube([20,3,1.5]);
+
+        translate([th_x-7,th_y/2-attiny_y/2,
+        extra]) 
+        cube([attiny_x,attiny_y,attiny_z+2]);
+        
+        
+        translate([2-extra,(th_y/2),10/2]) 
+        rotate([0,90,0]) 
+            cylinder(h = th_x+extra*2, d = screwM3+0.2);
+    }
+}
+
 
 if(simRod == true)
 {
@@ -132,7 +165,7 @@ translate([th_x+slideh_xMov + slideh_x/2,5*(th_y/3)/2,-extra])
 }
 
 
-penToolhead();
+// penToolhead();
 module penToolhead()
 {
     difference() 
@@ -187,7 +220,7 @@ module penToolhead()
 }
 
 
-translate([th_x+3,0,slideh_z+2])
+// translate([th_x+3,0,slideh_z+2])
 penHolder();
 module penHolder()
 {
@@ -197,25 +230,34 @@ module penHolder()
         {
             hull()
             {
-                cube([12-slideChampf,th_y,20]);
+                cube([12-slideChampf,th_y,penHolderZ]);
                 translate([12,slideChampf,0])
-                    cube([extra,th_y-slideChampf*2,20]);
+                    cube([extra,th_y-slideChampf*2,penHolderZ-2]);
         
             }
 
-            translate([17,th_y/2,0])
-            cylinder(d=20,h=20);
+            translate([15,th_y/2,0])
+            scale([1,1.2,1]) 
+            cylinder(d=20,h=penHolderZ);
         }
 
-        translate([17,th_y/2,-extra])
-            cylinder(d=13,h=20+extra*2);
+        //pen cutout
+        translate([16,th_y/2,-extra])
+            cylinder(d=13,h=penHolderZ+extra*2);
 
-        translate([17-extra,th_y/2,20/4]) 
+        translate([16-extra,th_y/2-25/2,penHolderZ/4]) 
+        rotate([0,90,90])
+        cylinder(h = 25, d = ScrewInsertM3);
+        translate([16-extra,th_y/2-25/2,penHolderZ/4*3]) 
+        rotate([0,90,90])
+        cylinder(h =25 , d = ScrewInsertM3);
+
+        translate([16-extra,th_y/2,penHolderZ/4]) 
         rotate([0,90,0])
-        cylinder(h = th_x+extra*2, d = screwM3);
-        translate([17-extra,th_y/2,20/4*3]) 
+        cylinder(h = 21, d = screwM3);
+        translate([16-extra,th_y/2,penHolderZ/4*3]) 
         rotate([0,90,0])
-        cylinder(h = th_x+extra*2, d = screwM3);
+        cylinder(h =21 , d = screwM3);
 
         translate([0,th_y/3,-extra])
             cube([5,th_y/3,10]);
@@ -223,10 +265,10 @@ module penHolder()
         //slide rods
         translate([-0.5+12/2,th_y/3/2,-extra])
             rotate([0,0,30])
-            cylinder(d=getDia(),h=20+extra*2, $fn=getFn());
+            cylinder(d=getDia(),h=penHolderZ+extra*2, $fn=getFn());
         translate([-0.5+12/2,th_y-th_y/3/2,-extra])
             rotate([0,0,30])
-            cylinder(d=getDia(),h=20+extra*2, $fn=getFn());
+            cylinder(d=getDia(),h=penHolderZ+extra*2, $fn=getFn());
 
         if(enableM3slideBearing == true)
         {
@@ -234,7 +276,7 @@ module penHolder()
             rotate([0,0,30])
             union(){
                 cylinder(d=slideBearingM3,h=slideB3Z+extra*2, $fn=getFn());
-                translate([0,0,20-5])
+                translate([0,0,penHolderZ-5])
                 cylinder(d=slideBearingM3,h=slideB3Z+extra*2, $fn=getFn());
             }
             
@@ -242,7 +284,7 @@ module penHolder()
             rotate([0,0,30])
             union(){
                 cylinder(d=slideBearingM3,h=slideB3Z+extra*2, $fn=getFn());
-                translate([0,0,20-5])
+                translate([0,0,penHolderZ-5])
                 cylinder(d=slideBearingM3,h=slideB3Z+extra*2, $fn=getFn());
             }
         }
@@ -253,7 +295,7 @@ module penHolder()
             rotate([0,0,30])
             union(){
                 cylinder(d=slideBearingM4,h=slideB4Z+extra*2, $fn=getFn());
-                translate([0,0,20-5])
+                translate([0,0,penHolderZ-5])
                 cylinder(d=slideBearingM4,h=slideB4Z+extra*2, $fn=getFn());
             }
             
@@ -261,17 +303,33 @@ module penHolder()
             rotate([0,0,30])
             union(){
                 cylinder(d=slideBearingM4,h=slideB4Z+extra*2, $fn=getFn());
-                translate([0,0,20-5])
+                translate([0,0,penHolderZ-5])
                 cylinder(d=slideBearingM4,h=slideB4Z+extra*2, $fn=getFn());
             }
         }
 
 
-        translate([12/2,-extra,20/4*3]) 
+        translate([12/2,-extra,penHolderZ/4*3]) 
         rotate([-90,00,0])
         cylinder(h = 3, d = screwM3);
 
-        translate([12/2,th_y+extra,20/4*3]) 
+        translate([12/2,-extra,penHolderZ/4*2]) 
+        rotate([-90,00,0])
+        cylinder(h = 3, d = screwM3);
+
+        translate([12/2,-extra,penHolderZ/4]) 
+        rotate([-90,00,0])
+        cylinder(h = 3, d = screwM3);
+
+        translate([12/2,th_y+extra,penHolderZ/4*3]) 
+        rotate([90,00,0])
+        cylinder(h = 3, d = screwM3);
+
+        translate([12/2,th_y+extra,penHolderZ/4*2]) 
+        rotate([90,00,0])
+        cylinder(h = 3, d = screwM3);
+
+        translate([12/2,th_y+extra,penHolderZ/4]) 
         rotate([90,00,0])
         cylinder(h = 3, d = screwM3);
     }
@@ -318,9 +376,9 @@ module slideHolder(variant = 1, thick=5)
     }
 }
 
-translate([1,-3,1]) 
-color("lightblue")
-servoFootprint();
+// translate([1,-3,1]) 
+// color("lightblue")
+// servoFootprint();
 module servoFootprint()
 {
     translate([0,0,slideh_z+servoCutPZ]) 
