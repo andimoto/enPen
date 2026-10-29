@@ -3,15 +3,13 @@
 #include <avr/iotn85.h>
 #include <avr/interrupt.h>
 
-// #include <cstdint>
-
 // #define TESTPWM
 
 const uint8_t DUTY_CYCLE_PEN_DOWN = 205;
 const uint8_t DUTY_CYCLE_PEN_UP = 170;
 
 int led=PIN_B1;
-int readPWM = PIN_B1;
+int readPWM = PIN_B2;
 
 void setDutyCycle(const uint8_t dutyCycle)
 {
@@ -61,6 +59,7 @@ void setupTimer1() {
 void setup() {
   // put your setup code here, to run once:
   pinMode(led, OUTPUT);
+  pinMode(readPWM, INPUT);
   pwm_setup();
   setupTimer1();
 }
@@ -88,52 +87,12 @@ void testPWM()
   delay(500);
 }
 
-
-
-const uint8_t MAX_LOOP_PER_PHASE = 20;
-
-uint8_t lowCnt = 0;
-uint8_t highCnt = 0;
-uint8_t oldLvl = 0;
-uint8_t cnt = 0;
-uint32_t allCnt = 0;
-
-
-void resetVars()
-{
-  lowCnt = 0;
-  highCnt = 0;
-
-  cnt = 0;
-}
-
-
-void simulatePWM()
-{
-  static uint8_t callCnt = 0;
-
-  // if(callCnt <= 4)
-  if(TCNT1 < 128)
-  {
-    digitalWrite(led, HIGH);
-  }else {
-    digitalWrite(led, LOW);
-  }
-
-  // callCnt++;
-
-  // if(callCnt >= MAX_LOOP_PER_PHASE)
-  // {
-  //   callCnt = 0;
-  // }
-}
-
-
 uint16_t startHighPhaseA = 0;
 uint16_t startLowPhaseA = 0;
 uint16_t startHighPhaseB = 0;
 uint16_t startLowPhaseB = 0;
 uint8_t slotA = 1;
+uint8_t oldLvl = 0;
 
 void setHighStartTime(const uint16_t strtT)
 {
@@ -170,7 +129,7 @@ uint16_t getDiffTime(const uint16_t t1, const uint16_t t2)
 
 // timer1 counts to 256 in 2ms
 // thus: 1ms = 128 => 25% or 128 = 32
-const uint8_t PEN_DOWN_THRES = 32;
+const uint8_t PEN_DOWN_THRES = 64;
 void calcDutyCycle()
 {
   uint16_t diff = 0;
@@ -189,9 +148,11 @@ void calcDutyCycle()
     setDutyCycle(DUTY_CYCLE_PEN_UP);
   }
 
+
 }
 
-
+uint32_t loopCnt = 0;
+uint32_t tmoStart = 100;
 
 void loop() {
 #ifdef TESTPWM
@@ -209,6 +170,7 @@ void loop() {
     changeSlot();
     setHighStartTime(timCurr);
     calcDutyCycle(); 
+    tmoStart = 1000;
   }
 
   if(lvl == LOW && oldLvl == HIGH)
@@ -218,9 +180,17 @@ void loop() {
 
 
   oldLvl = lvl;
+  loopCnt++;
+  if(tmoStart >= 1)
+  {
+    tmoStart--;
+  }else{
+    setDutyCycle(DUTY_CYCLE_PEN_UP);
+  }
 
-#if 0
-  if(timCurr <= 80 || (timCurr > 128 && timCurr <= 208))
+
+#if 1
+  if(lvl == HIGH)
   {
     digitalWrite(led, HIGH);
   }else{
