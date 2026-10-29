@@ -47,16 +47,22 @@ void pwm_setup()
 }
 
 
+void setupTimer1() {
+  cli(); // 1. Disable global interrupts during setup
+  TCCR1 = 0x00;                  // normal mode counter
+
+  TCCR1 |= (0<<CS13)|(1<<CS12)|(1<<CS11)|(0<<CS10);  // prescaler set to 64 -> 1/8MHz * 64 = 40us
+  TCNT1 = 0;                      // reset counter
+
+  TIMSK |= (0 << TOIE1);
+  sei(); // 7. Re-enable global interrupts
+}
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(led, OUTPUT);
   pwm_setup();
-  
-
-
-
- 
+  setupTimer1();
 }
 
 
@@ -83,7 +89,7 @@ void testPWM()
 }
 
 
-const uint8_t PEN_DOWN_THRES = 4;
+
 const uint8_t MAX_LOOP_PER_PHASE = 20;
 
 uint8_t lowCnt = 0;
@@ -92,21 +98,6 @@ uint8_t oldLvl = 0;
 uint8_t cnt = 0;
 uint32_t allCnt = 0;
 
-
-
-void calcDutyCycle(const uint8_t high, const uint8_t low, const uint8_t lcnt)
-{
-  uint8_t tempPhCnt = high + low;
-  if(tempPhCnt <= lcnt)
-  {
-    if(high > PEN_DOWN_THRES)
-    {
-      setDutyCycle(DUTY_CYCLE_PEN_DOWN);
-    }else{
-      setDutyCycle(DUTY_CYCLE_PEN_UP);
-    }
-  }
-}
 
 void resetVars()
 {
@@ -121,57 +112,122 @@ void simulatePWM()
 {
   static uint8_t callCnt = 0;
 
-  if(callCnt <= 15)
+  // if(callCnt <= 4)
+  if(TCNT1 < 128)
   {
     digitalWrite(led, HIGH);
   }else {
     digitalWrite(led, LOW);
   }
 
-  callCnt++;
+  // callCnt++;
 
-  if(callCnt >= MAX_LOOP_PER_PHASE)
+  // if(callCnt >= MAX_LOOP_PER_PHASE)
+  // {
+  //   callCnt = 0;
+  // }
+}
+
+
+uint16_t startHighPhaseA = 0;
+uint16_t startLowPhaseA = 0;
+uint16_t startHighPhaseB = 0;
+uint16_t startLowPhaseB = 0;
+uint8_t slotA = 1;
+
+void setHighStartTime(const uint16_t strtT)
+{
+  if(slotA)
   {
-    callCnt = 0;
+    startHighPhaseA = strtT;
+  }else{
+    startHighPhaseB = strtT;
   }
 }
+
+void setLowStartTime(const uint16_t strtT)
+{
+  if(slotA)
+  {
+    startLowPhaseA = strtT;
+  }else{
+    startLowPhaseB = strtT;
+  }
+}
+
+void changeSlot()
+{
+  slotA ^= 1;
+}
+
+
+uint16_t getDiffTime(const uint16_t t1, const uint16_t t2)
+{
+  // The timestamp counter is 8-bit, so subtraction wraps modulo 256.
+  return (uint16_t)((t2 - t1) & 0xFFu);
+}
+
+
+// timer1 counts to 256 in 2ms
+// thus: 1ms = 128 => 25% or 128 = 32
+const uint8_t PEN_DOWN_THRES = 32;
+void calcDutyCycle()
+{
+  uint16_t diff = 0;
+  if(slotA)
+  {
+    diff = getDiffTime(startHighPhaseB, startLowPhaseB);
+  }else{
+    diff = getDiffTime(startHighPhaseA, startLowPhaseA);
+  }
+
+
+  if(diff > PEN_DOWN_THRES)
+  {
+    setDutyCycle(DUTY_CYCLE_PEN_DOWN);
+  }else{
+    setDutyCycle(DUTY_CYCLE_PEN_UP);
+  }
+
+}
+
+
 
 void loop() {
 #ifdef TESTPWM
   testPWM();
 #else
   
-  if(allCnt > 10000 && allCnt < 20000)
-    simulatePWM();
-  // else
-  //  digitalWrite(led, LOW);
-
-  if(cnt >= MAX_LOOP_PER_PHASE)
-  {
-    resetVars();
-  }
 
   // read pwm signal of/for laser
   uint8_t lvl = digitalRead(readPWM);
+  uint16_t timCurr = (uint16_t)TCNT1;
 
   // rising edge / new phase
   if(lvl == HIGH && oldLvl == LOW)
   {
-    calcDutyCycle(highCnt, lowCnt, cnt);
-    resetVars();
+    changeSlot();
+    setHighStartTime(timCurr);
+    calcDutyCycle(); 
   }
 
-  if(lvl == HIGH)
+  if(lvl == LOW && oldLvl == HIGH)
   {
-    highCnt++;
-  }else {
-    lowCnt++;
+    setLowStartTime(timCurr);
   }
+
+
   oldLvl = lvl;
 
-  cnt++;
-  allCnt++;
-  delayMicroseconds(50);
+#if 0
+  if(timCurr <= 80 || (timCurr > 128 && timCurr <= 208))
+  {
+    digitalWrite(led, HIGH);
+  }else{
+    digitalWrite(led, LOW);
+  }
+#endif
+  // delayMicroseconds(35);
 
 #endif
 }
