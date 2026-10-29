@@ -5,7 +5,7 @@
 
 // #include <cstdint>
 
-#define TESTPWM
+// #define TESTPWM
 
 const uint8_t DUTY_CYCLE_PEN_DOWN = 205;
 const uint8_t DUTY_CYCLE_PEN_UP = 170;
@@ -25,7 +25,9 @@ void setupTimer1() {
 
   TCCR1 |= (1<<CS13)|(1<<CS11)|(1<<CS11);  // prescaler set to 64 -> 1/8MHz * 64 = 40us
   TCNT1 = 0;                      // reset counter
-// TIMSK |= (1 << TOIE0);
+
+  TIMSK |= (0 << TOIE0);
+  TIMSK |= (1 << TOIE1);
   sei(); // 7. Re-enable global interrupts
 }
 
@@ -38,6 +40,7 @@ void setupTimer1() {
 
 void setupINT()
 {
+  cli(); // 1. Disable global interrupts during setup
   MCUCR |= (1<<ISC00) | (0<<ISC01); //set to irq on logical change
   GIMSK = 0x00;
   GIMSK |= 1<<PCIE;   // irq enable on logical change
@@ -47,8 +50,9 @@ void setupINT()
   PCMSK = 0x00;
   PCMSK = 1<<PCINT1;  // irq on pin b1
 
-
+  sei(); // 7. Re-enable global interrupts
 }
+
 uint8_t lowTime = 0;
 uint8_t highTime = 0;
 ISR(INT0_vect)
@@ -103,8 +107,10 @@ void pwm_setup()
 void setup() {
   // put your setup code here, to run once:
   pinMode(led, OUTPUT);
-  pwm_setup();
+  // setupINT();
   // setupTimer1();
+  pwm_setup();
+  
 
 
 
@@ -134,17 +140,49 @@ void testPWM()
   delay(500);
 }
 
+uint8_t lowCnt = 0;
+uint8_t highCnt = 0;
+  uint8_t oldLvl = 0;
+  uint8_t cnt = 0;
 void loop() {
 #ifdef TESTPWM
   testPWM();
 #else
-  digitalWrite(led, HIGH);
-  delay(40);
-  // delayMicroseconds(200);
-  digitalWrite(led, LOW);
-  delay(60);
-  // delayMicroseconds(800);
+  // digitalWrite(led, HIGH);
+  // delay(500);
+  // // delayMicroseconds(100);
+  // digitalWrite(led, LOW);
+  // delay(500);
+  // //delayMicroseconds(10);
 
+
+
+
+  while(1)
+  {
+    // read pwm signal of/for laser
+    uint8_t lvl = digitalRead(readPWM);
+
+    // rising edge / new phase
+    if(lvl == HIGH && oldLvl == LOW)
+    {
+      
+    }
+
+    if(digitalRead(readPWM) == HIGH)
+    {
+      highCnt++;
+    }else {
+      lowCnt++;
+    }
+    oldLvl = lvl;
+
+    cnt++;
+
+
+
+    delayMicroseconds(50);
+  }
 #endif
 }
 
