@@ -44,6 +44,21 @@ void pwm_setup()
     sei();                                 // Enable global interrupts
 }
 
+void startUpLed()
+{
+  digitalWrite(led, HIGH);
+  delay(250);
+  digitalWrite(led, LOW);
+  delay(250);
+  digitalWrite(led, HIGH);
+  delay(250);
+  digitalWrite(led, LOW);
+  delay(250);
+  digitalWrite(led, HIGH);
+  delay(250);
+  digitalWrite(led, LOW);
+}
+
 
 void setupTimer1() {
   cli(); // 1. Disable global interrupts during setup
@@ -62,6 +77,8 @@ void setup() {
   pinMode(readPWM, INPUT);
   pwm_setup();
   setupTimer1();
+
+  startUpLed();
 }
 
 
@@ -150,6 +167,9 @@ void calcDutyCycle()
 
 
 }
+
+
+
 
 uint32_t loopCnt = 0;
 uint32_t tmoStart = 100;
